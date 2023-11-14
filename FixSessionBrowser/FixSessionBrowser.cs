@@ -40,7 +40,7 @@ namespace FixSessionBrowser
 				__state = ____lastId == __instance.WorldOrSessionId.Value;
 				return true;
 			}
-			public static void Postfix(WorldItem __instance, string ____lastId, Sync<bool> ____visited, Record prefetchedRecord, Record ____worldRecord, bool __state) 
+			public static void Postfix(WorldItem __instance, string ____lastId, Sync<bool> ____visited, bool __state) 
 			{
 				if (__state == false && ____lastId != null && !____lastId.StartsWith("S-", StringComparison.InvariantCultureIgnoreCase))
 				{
