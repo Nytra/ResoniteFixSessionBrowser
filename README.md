@@ -4,7 +4,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 
 It fixes this issue: https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
 
-and any other issues that relate to either sessions showing as worlds, or sessions showing nothing when you click on them.
+and any other issues that relate to sessions showing as worlds, or sessions showing nothing when you click on them.
 
 ## Installation
 1. Install [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader).
