@@ -32,35 +32,44 @@ namespace FixSessionBrowser
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
 
+		private static void ScheduleForceUpdate(WorldItem item)
+		{
+			bool isWorldThumbnailItem = item is WorldThumbnailItem;
+			string text = isWorldThumbnailItem ? "WorldThumbnailItem" : "WorldDetail";
+            Debug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
+            item.RunSynchronously(() =>
+            {
+                if (item == null)
+                {
+                    Debug("instance became null!");
+                    return;
+                }
+                else
+                {
+                    Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
+					forceUpdateMethod.Invoke(item, new object[] { isWorldThumbnailItem });
+                }
+            });
+        }
+
 		[HarmonyPatch(typeof(WorldItem), "UpdateTarget")]
 		class UpdateTargetPatch
 		{
 			public static bool Prefix(WorldItem __instance, string ____lastId, out bool __state)
 			{
-				__state = ____lastId == __instance.WorldOrSessionId.Value;
+				__state = ____lastId == __instance?.WorldOrSessionId.Value;
 				return true;
 			}
+
 			public static void Postfix(WorldItem __instance, string ____lastId, Sync<bool> ____visited, bool __state) 
 			{
-				if (__state == false && ____lastId != null && !____lastId.StartsWith("S-", StringComparison.InvariantCultureIgnoreCase))
+				if (__instance != null && __state == false && ____lastId != null && !____lastId.StartsWith("S-", StringComparison.InvariantCultureIgnoreCase))
 				{
 					if (____visited.Value == true && Config.GetValue(FIX_WORLDDETAIL) && __instance is WorldDetail)
 					{
 						// this should only run for worlds that the user has visited before (has the Visited text in the thumbnail)
-						Debug($"UpdateTarget: Scheduling update for WorldDetail {__instance.WorldOrSessionId.Value}");
-                        __instance.RunSynchronously(() =>
-                        {
-                            if (__instance == null)
-                            {
-                                Debug("__instance became null!");
-                                return;
-                            }
-                            else
-                            {
-                                Debug($"Forcing update for WorldDetail {__instance.WorldOrSessionId.Value}");
-                                forceUpdateMethod.Invoke(__instance, new object[] { false });
-                            }
-                        });
+						Debug("UpdateTarget");
+						ScheduleForceUpdate(__instance);
                     }
 				}
 			}
@@ -73,20 +82,8 @@ namespace FixSessionBrowser
 			{
 				if (Config.GetValue(FIX_WORLDTHUMBNAILITEM) && __instance != null && __instance is WorldThumbnailItem)
 				{
-					Debug($"OnWorldIdSessionsChanged: Scheduling update for WorldThumbnailItem {__instance.WorldOrSessionId.Value}");
-					__instance.RunSynchronously(() =>
-					{
-						if (__instance == null)
-						{
-							Debug("__instance became null!");
-							return;
-						}
-						else
-						{
-							Debug($"Forcing update for WorldThumbnailItem {__instance.WorldOrSessionId.Value}");
-							forceUpdateMethod.Invoke(__instance, new object[] { true });
-						}
-					});
+					Debug("OnWorldIdSessionsChanged");
+					ScheduleForceUpdate(__instance);
 				}
 			}
 		}
