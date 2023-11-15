@@ -2,10 +2,7 @@ using HarmonyLib;
 using ResoniteModLoader;
 using FrooxEngine;
 using System.Reflection;
-using Elements.Core;
 using System;
-using System.Text;
-using System.Collections.Generic;
 
 namespace FixSessionBrowser
 {
