@@ -17,6 +17,8 @@ namespace FixSessionBrowser
 
 		[AutoRegisterConfigKey]
 		private static ModConfigurationKey<bool> MOD_ENABLED = new ModConfigurationKey<bool>("MOD_ENABLED", "Mod enabled:", () => true);
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> EXTRA_DEBUG = new ModConfigurationKey<bool>("EXTRA_DEBUG", "Extra debug logging:", () => false, internalAccessOnly: true);
 
 		public override void OnEngineInit()
 		{
@@ -28,16 +30,24 @@ namespace FixSessionBrowser
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
 		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
 
+		private static void ExtraDebug(string msg)
+		{
+			if (Config.GetValue(EXTRA_DEBUG))
+			{
+				Debug(msg);
+			}
+		}
+
 		private static void ScheduleForceUpdate(WorldItem item)
 		{
 			bool isWorldThumbnailItem = item is WorldThumbnailItem;
 			string text = isWorldThumbnailItem ? "WorldThumbnailItem" : "WorldDetail";
-			Debug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
+			ExtraDebug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
 			item.RunSynchronously(() =>
 			{
 				if (item == null)
 				{
-					Debug("instance became null!");
+					ExtraDebug("instance became null!");
 					return;
 				}
 				else
@@ -66,7 +76,7 @@ namespace FixSessionBrowser
 					// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/675
 					if (____visited.Value == true)
 					{
-						Debug("UpdateTarget - WorldDetail");
+						ExtraDebug("UpdateTarget - WorldDetail");
 						ScheduleForceUpdate(__instance);
 					}
 				}
@@ -97,17 +107,17 @@ namespace FixSessionBrowser
 								{
 									if (counterRoot.Target.Slot.ActiveSelf == false)
 									{
-										Debug("OnWorldIdSessionsChanged - WorldThumbnailItem");
+										ExtraDebug("OnWorldIdSessionsChanged - WorldThumbnailItem");
 										ScheduleForceUpdate(__instance);
 									}
 									else
 									{
-										Debug("Counter is active!");
+										ExtraDebug("Counter is active!");
 									}
 								}
 								else
 								{
-									Debug("Counter is null!");
+									ExtraDebug("Counter is null!");
 								}
 							}
 						});
@@ -116,12 +126,11 @@ namespace FixSessionBrowser
 					{
 						// If this is a WorldDetail, always force update
 						// this prevents the session from disappearing while the detail panel is open
-						Debug("OnWorldIdSessionsChanged - WorldDetail");
+						ExtraDebug("OnWorldIdSessionsChanged - WorldDetail");
 						ScheduleForceUpdate(__instance);
 					}
 				}
 			}
 		}
-
 	}
 }
