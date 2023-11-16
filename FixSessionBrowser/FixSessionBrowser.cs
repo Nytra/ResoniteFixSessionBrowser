@@ -3,6 +3,7 @@ using ResoniteModLoader;
 using FrooxEngine;
 using System.Reflection;
 using System;
+using SkyFrost.Base;
 
 namespace FixSessionBrowser
 {
@@ -29,6 +30,12 @@ namespace FixSessionBrowser
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
 		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
+		private static FieldInfo selectedItemField = AccessTools.Field(typeof(WorldDetail), "_selectedItem");
+		private static Type sessionSelectionItemType = AccessTools.TypeByName("FrooxEngine.WorldDetail+SessionSelectionItem");
+		private static FieldInfo sessionField = AccessTools.Field(sessionSelectionItemType, "session");
+		private static FieldInfo sessionSelectionListField = AccessTools.Field(typeof(WorldDetail), "_sessionSelectionList");
+		private static MethodInfo updateSelectedMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSelected");
+		private static MethodInfo updateSessionItemsMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSessionItems");
 
 		private static void ExtraDebug(string msg)
 		{
@@ -38,10 +45,21 @@ namespace FixSessionBrowser
 			}
 		}
 
-		private static void ScheduleForceUpdate(WorldItem item)
+		private static string GetSessionIdFromSessionSelectionItem(object obj)
 		{
-			bool isWorldThumbnailItem = item is WorldThumbnailItem;
-			string text = isWorldThumbnailItem ? "WorldThumbnailItem" : "WorldDetail";
+			SessionInfo session = (SessionInfo)sessionField.GetValue(obj);
+			return session?.SessionId;
+		}
+
+		private static void ScheduleForceUpdate(WorldItem item, object sessionSelectionItem = null)
+		{
+			WorldDetail worldDetail = item as WorldDetail;
+			string text = worldDetail == null ? "WorldThumbnailItem" : "WorldDetail";
+			string selectedSessionId = null;
+			if (sessionSelectionItem != null)
+			{
+				selectedSessionId = GetSessionIdFromSessionSelectionItem(sessionSelectionItem);
+			}
 			ExtraDebug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
 			item.RunSynchronously(() =>
 			{
@@ -53,7 +71,35 @@ namespace FixSessionBrowser
 				else
 				{
 					Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
-					forceUpdateMethod.Invoke(item, new object[] { isWorldThumbnailItem });
+					forceUpdateMethod.Invoke(item, new object[] { worldDetail == null }); // Only notify the WorldListManager if the item is a WorldThumbnailItem
+					if (selectedSessionId != null)
+					{
+						// do scary reflection to reselect the session when the WorldDetail updates
+						// this is just a quality of life improvement
+						var sessionSelectionList = (System.Collections.IList)sessionSelectionListField.GetValue(worldDetail);
+						if (sessionSelectionList == null) return;
+						int i = 0;
+						bool found = false;
+						ExtraDebug("Searching for the session...");
+						foreach(object listElement in sessionSelectionList)
+						{
+							string sessionId = GetSessionIdFromSessionSelectionItem(listElement);
+							if (sessionId == selectedSessionId)
+							{
+								ExtraDebug($"Found the session: {sessionId}");
+								found = true;
+								break;
+							}
+							i++;
+						}
+						if (found)
+						{
+							ExtraDebug("Selecting the session.");
+							selectedItemField.SetValue(worldDetail, sessionSelectionList[i]);
+							updateSelectedMethod.Invoke(worldDetail, new object[] { });
+							updateSessionItemsMethod.Invoke(worldDetail, new object[] { });
+						}
+					}
 				}
 			});
 		}
@@ -122,13 +168,14 @@ namespace FixSessionBrowser
 							}
 						});
 					}
-					else if (__instance is WorldDetail)
+					else if (__instance is WorldDetail worldDetail)
 					{
 						// If this is a WorldDetail, always force update
 						// this prevents the session from disappearing while the detail panel is open
 						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/643
 						ExtraDebug("OnWorldIdSessionsChanged - WorldDetail");
-						ScheduleForceUpdate(__instance);
+						var selectedItem = selectedItemField.GetValue(worldDetail);
+						ScheduleForceUpdate(__instance, selectedItem is FrooxEngine.Record ? null : selectedItem);
 					}
 				}
 			}
