@@ -105,7 +105,7 @@ namespace FixSessionBrowser
 								var counterRoot = (SyncRef<FrooxEngine.UIX.RectTransform>)counterRootField.GetValue(thumbnailItem);
 								if (counterRoot != null && counterRoot.Target != null)
 								{
-									if (counterRoot.Target.Slot.ActiveSelf == false)
+									if (counterRoot.Target.Slot?.ActiveSelf == false)
 									{
 										ExtraDebug("OnWorldIdSessionsChanged - WorldThumbnailItem");
 										ScheduleForceUpdate(__instance);
