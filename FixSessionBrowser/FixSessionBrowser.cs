@@ -126,6 +126,7 @@ namespace FixSessionBrowser
 					{
 						// If this is a WorldDetail, always force update
 						// this prevents the session from disappearing while the detail panel is open
+						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/643
 						ExtraDebug("OnWorldIdSessionsChanged - WorldDetail");
 						ScheduleForceUpdate(__instance);
 					}
