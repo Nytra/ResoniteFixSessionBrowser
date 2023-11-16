@@ -19,6 +19,8 @@ namespace FixSessionBrowser
 		[AutoRegisterConfigKey]
 		private static ModConfigurationKey<bool> MOD_ENABLED = new ModConfigurationKey<bool>("MOD_ENABLED", "Mod enabled:", () => true);
 		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> RESELECT = new ModConfigurationKey<bool>("RESELECT", "Reselect the session/world in WorldDetail after it updates:", () => true, internalAccessOnly: true);
+		[AutoRegisterConfigKey]
 		private static ModConfigurationKey<bool> EXTRA_DEBUG = new ModConfigurationKey<bool>("EXTRA_DEBUG", "Extra debug logging:", () => false, internalAccessOnly: true);
 
 		public override void OnEngineInit()
@@ -33,6 +35,7 @@ namespace FixSessionBrowser
 		private static FieldInfo selectedItemField = AccessTools.Field(typeof(WorldDetail), "_selectedItem");
 		private static Type sessionSelectionItemType = AccessTools.TypeByName("FrooxEngine.WorldDetail+SessionSelectionItem");
 		private static FieldInfo sessionField = AccessTools.Field(sessionSelectionItemType, "session");
+		private static FieldInfo worldField = AccessTools.Field(sessionSelectionItemType, "world");
 		private static FieldInfo sessionSelectionListField = AccessTools.Field(typeof(WorldDetail), "_sessionSelectionList");
 		private static MethodInfo updateSelectedMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSelected");
 		private static MethodInfo updateSessionItemsMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSessionItems");
@@ -51,14 +54,25 @@ namespace FixSessionBrowser
 			return session?.SessionId;
 		}
 
-		private static void ScheduleForceUpdate(WorldItem item, object sessionSelectionItem = null)
+		private static World GetWorldFromSessionSelectionItem(object obj)
+		{
+			return (World)worldField.GetValue(obj);
+
+		}
+
+		private static void ScheduleForceUpdate(WorldItem item, object selectedItem = null)
 		{
 			WorldDetail worldDetail = item as WorldDetail;
 			string text = worldDetail == null ? "WorldThumbnailItem" : "WorldDetail";
 			string selectedSessionId = null;
-			if (sessionSelectionItem != null)
+			World selectedWorld = null;
+			if (selectedItem != null && selectedItem.GetType() == sessionSelectionItemType)
 			{
-				selectedSessionId = GetSessionIdFromSessionSelectionItem(sessionSelectionItem);
+				selectedSessionId = GetSessionIdFromSessionSelectionItem(selectedItem);
+				if (selectedSessionId == null)
+				{
+					selectedWorld = (World)worldField.GetValue(selectedItem);
+				}
 			}
 			ExtraDebug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
 			item.RunSynchronously(() =>
@@ -72,7 +86,7 @@ namespace FixSessionBrowser
 				{
 					Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
 					forceUpdateMethod.Invoke(item, new object[] { worldDetail == null }); // Only notify the WorldListManager if the item is a WorldThumbnailItem
-					if (selectedSessionId != null)
+					if (Config.GetValue(RESELECT) && (selectedSessionId != null || selectedWorld != null))
 					{
 						// do scary reflection to reselect the session when the WorldDetail updates
 						// this is just a quality of life improvement
@@ -80,21 +94,31 @@ namespace FixSessionBrowser
 						if (sessionSelectionList == null) return;
 						int i = 0;
 						bool found = false;
-						ExtraDebug("Searching for the session...");
+						ExtraDebug("Searching for the session/world...");
 						foreach(object listElement in sessionSelectionList)
 						{
 							string sessionId = GetSessionIdFromSessionSelectionItem(listElement);
-							if (sessionId == selectedSessionId)
+							if (sessionId != null && sessionId.Equals(selectedSessionId, StringComparison.InvariantCultureIgnoreCase))
 							{
 								ExtraDebug($"Found the session: {sessionId}");
 								found = true;
 								break;
 							}
+							else
+							{
+								World world = GetWorldFromSessionSelectionItem(listElement);
+								if (world != null && world == selectedWorld)
+								{
+									ExtraDebug($"Found the world: {world.Name}");
+									found = true;
+									break;
+								}
+							}
 							i++;
 						}
 						if (found)
 						{
-							ExtraDebug("Selecting the session.");
+							ExtraDebug("Reselecting the session/world.");
 							selectedItemField.SetValue(worldDetail, sessionSelectionList[i]);
 							updateSelectedMethod.Invoke(worldDetail, new object[] { });
 							updateSessionItemsMethod.Invoke(worldDetail, new object[] { });
