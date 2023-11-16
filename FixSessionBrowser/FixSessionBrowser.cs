@@ -33,21 +33,21 @@ namespace FixSessionBrowser
 		{
 			bool isWorldThumbnailItem = item is WorldThumbnailItem;
 			string text = isWorldThumbnailItem ? "WorldThumbnailItem" : "WorldDetail";
-            Debug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
-            item.RunSynchronously(() =>
-            {
-                if (item == null)
-                {
-                    Debug("instance became null!");
-                    return;
-                }
-                else
-                {
-                    Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
+			Debug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
+			item.RunSynchronously(() =>
+			{
+				if (item == null)
+				{
+					Debug("instance became null!");
+					return;
+				}
+				else
+				{
+					Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
 					forceUpdateMethod.Invoke(item, new object[] { isWorldThumbnailItem });
-                }
-            });
-        }
+				}
+			});
+		}
 
 		[HarmonyPatch(typeof(WorldItem), "UpdateTarget")]
 		class UpdateTargetPatch
@@ -67,7 +67,7 @@ namespace FixSessionBrowser
 						// this should only run for worlds that the user has visited before (has the Visited text in the thumbnail)
 						Debug("UpdateTarget");
 						ScheduleForceUpdate(__instance);
-                    }
+					}
 				}
 			}
 		}
@@ -77,7 +77,12 @@ namespace FixSessionBrowser
 		{
 			public static void Postfix(WorldItem __instance)
 			{
-				if (Config.GetValue(FIX_WORLDTHUMBNAILITEM) && __instance != null && __instance is WorldThumbnailItem)
+				//if (Config.GetValue(FIX_WORLDTHUMBNAILITEM) && __instance != null && __instance is WorldThumbnailItem)
+				//{
+				//    Debug("OnWorldIdSessionsChanged");
+				//    ScheduleForceUpdate(__instance);
+				//}
+				if (__instance != null)
 				{
 					Debug("OnWorldIdSessionsChanged");
 					ScheduleForceUpdate(__instance);
