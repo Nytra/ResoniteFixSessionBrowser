@@ -2,7 +2,13 @@
 
 A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that fixes the session browser.
 
-It fixes this issue: https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
+It is a workaround for the following issues: 
+
+https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
+
+https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/675
+
+https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/643
 
 and any other issues that relate to sessions showing as worlds, or sessions showing nothing when you click on them.
 
