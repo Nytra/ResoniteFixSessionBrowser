@@ -71,7 +71,7 @@ namespace FixSessionBrowser
 				selectedSessionId = GetSessionIdFromSessionSelectionItem(selectedItem);
 				if (selectedSessionId == null)
 				{
-					selectedWorld = (World)worldField.GetValue(selectedItem);
+					selectedWorld = GetWorldFromSessionSelectionItem(selectedItem);
 				}
 			}
 			ExtraDebug($"Scheduling update for {text} {item.WorldOrSessionId.Value}");
