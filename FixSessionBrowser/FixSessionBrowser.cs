@@ -97,21 +97,27 @@ namespace FixSessionBrowser
 						ExtraDebug("Searching for the session/world...");
 						foreach(object listElement in sessionSelectionList)
 						{
-							string sessionId = GetSessionIdFromSessionSelectionItem(listElement);
-							if (sessionId != null && sessionId.Equals(selectedSessionId, StringComparison.InvariantCultureIgnoreCase))
+							if (listElement != null)
 							{
-								ExtraDebug($"Found the session: {sessionId}");
-								found = true;
-								break;
-							}
-							else
-							{
-								World world = GetWorldFromSessionSelectionItem(listElement);
-								if (world != null && world == selectedWorld)
+								if (selectedSessionId != null)
 								{
-									ExtraDebug($"Found the world: {world.Name}");
-									found = true;
-									break;
+									string sessionId = GetSessionIdFromSessionSelectionItem(listElement);
+									if (sessionId != null && sessionId.Equals(selectedSessionId, StringComparison.InvariantCultureIgnoreCase))
+									{
+										ExtraDebug($"Found the session: {sessionId}");
+										found = true;
+										break;
+									}
+								}
+								else if (selectedWorld != null)
+								{
+									World world = GetWorldFromSessionSelectionItem(listElement);
+									if (world != null && world == selectedWorld)
+									{
+										ExtraDebug($"Found the world: {world.Name}");
+										found = true;
+										break;
+									}
 								}
 							}
 							i++;
@@ -164,6 +170,8 @@ namespace FixSessionBrowser
 					{
 						// If this is a WorldThumbnailItem, only force update if it is showing a world and not a session
 						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
+
+						// run this at the end of the current update
 						__instance.RunSynchronously(() => 
 						{
 							if (thumbnailItem != null)
