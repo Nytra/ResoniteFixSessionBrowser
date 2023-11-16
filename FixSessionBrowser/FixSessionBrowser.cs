@@ -16,9 +16,7 @@ namespace FixSessionBrowser
 		public static ModConfiguration Config;
 
 		[AutoRegisterConfigKey]
-		private static ModConfigurationKey<bool> FIX_WORLDDETAIL = new ModConfigurationKey<bool>("FIX_WORLDDETAIL", "Fix WorldDetail:", () => true, internalAccessOnly: true);
-		[AutoRegisterConfigKey]
-		private static ModConfigurationKey<bool> FIX_WORLDTHUMBNAILITEM = new ModConfigurationKey<bool>("FIX_WORLDTHUMBNAILITEM", "Fix WorldThumbnailItem:", () => true, internalAccessOnly: true);
+		private static ModConfigurationKey<bool> MOD_ENABLED = new ModConfigurationKey<bool>("MOD_ENABLED", "Mod enabled:", () => true);
 
 		public override void OnEngineInit()
 		{
@@ -28,6 +26,7 @@ namespace FixSessionBrowser
 		}
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
+		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
 
 		private static void ScheduleForceUpdate(WorldItem item)
 		{
@@ -54,18 +53,20 @@ namespace FixSessionBrowser
 		{
 			public static bool Prefix(WorldItem __instance, string ____lastId, out bool __state)
 			{
+				// the postfix should only run if the _lastId does not equal the WorldOrSessionId at the beginning of the method
 				__state = ____lastId == __instance?.WorldOrSessionId.Value;
 				return true;
 			}
 
 			public static void Postfix(WorldItem __instance, string ____lastId, Sync<bool> ____visited, bool __state) 
 			{
-				if (__instance != null && __state == false && ____lastId != null && !____lastId.StartsWith("S-", StringComparison.InvariantCultureIgnoreCase))
+				if (Config.GetValue(MOD_ENABLED) && __state == false && __instance != null && __instance is WorldDetail && ____lastId != null && !____lastId.StartsWith("S-", StringComparison.InvariantCultureIgnoreCase))
 				{
-					if (____visited.Value == true && Config.GetValue(FIX_WORLDDETAIL) && __instance is WorldDetail)
+					// this should only run for worlds that the user has visited before (has the Visited text in the thumbnail)
+					// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/675
+					if (____visited.Value == true)
 					{
-						// this should only run for worlds that the user has visited before (has the Visited text in the thumbnail)
-						Debug("UpdateTarget");
+						Debug("UpdateTarget - WorldDetail");
 						ScheduleForceUpdate(__instance);
 					}
 				}
@@ -77,15 +78,47 @@ namespace FixSessionBrowser
 		{
 			public static void Postfix(WorldItem __instance)
 			{
-				//if (Config.GetValue(FIX_WORLDTHUMBNAILITEM) && __instance != null && __instance is WorldThumbnailItem)
-				//{
-				//    Debug("OnWorldIdSessionsChanged");
-				//    ScheduleForceUpdate(__instance);
-				//}
-				if (__instance != null)
+				if (Config.GetValue(MOD_ENABLED) == true && __instance != null)
 				{
-					Debug("OnWorldIdSessionsChanged");
-					ScheduleForceUpdate(__instance);
+					if (__instance is WorldThumbnailItem thumbnailItem)
+					{
+						// If this is a WorldThumbnailItem, only force update if it is showing a world and not a session
+						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
+						__instance.RunSynchronously(() => 
+						{
+							if (thumbnailItem != null)
+							{
+								// Theoretically: if the counterRoot target slot is deactivated, it means it is showing a world and not a session
+
+								// this check might need to be improved somehow, because it seems to always force an update here even if
+								// the item is not a world. this makes it inefficient.
+								var counterRoot = (SyncRef<FrooxEngine.UIX.RectTransform>)counterRootField.GetValue(thumbnailItem);
+								if (counterRoot != null && counterRoot.Target != null)
+								{
+									if (counterRoot.Target.Slot.ActiveSelf == false)
+									{
+										Debug("OnWorldIdSessionsChanged - WorldThumbnailItem");
+										ScheduleForceUpdate(__instance);
+									}
+									else
+									{
+										Debug("Counter is active!");
+									}
+								}
+								else
+								{
+									Debug("Counter is null!");
+								}
+							}
+						});
+					}
+					else if (__instance is WorldDetail)
+					{
+						// If this is a WorldDetail, always force update
+						// this prevents the session from disappearing while the detail panel is open
+						Debug("OnWorldIdSessionsChanged - WorldDetail");
+						ScheduleForceUpdate(__instance);
+					}
 				}
 			}
 		}
