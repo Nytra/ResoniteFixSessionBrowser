@@ -12,7 +12,7 @@ namespace FixSessionBrowser
 	{
 		public override string Name => "FixSessionBrowser";
 		public override string Author => "Nytra";
-		public override string Version => "1.0.0-preview5";
+		public override string Version => "1.0.0-preview6";
 		public override string Link => "https://github.com/Nytra/ResoniteFixSessionBrowser";
 
 		public static ModConfiguration Config;
@@ -72,7 +72,7 @@ namespace FixSessionBrowser
 			}
 
 			worldItemSet.Add(item);
-			ExtraDebug($"WorldItem added to worldItemSet. New size of worldItemSet: {worldItemSet.Count}");
+			ExtraDebug($"WorldItem added to worldItemSet. New size of worldItemSet: {worldItemSet.Count}. Item: {item.WorldOrSessionId.Value}");
 
 			WorldDetail worldDetail = item as WorldDetail;
 			string text = worldDetail == null ? "WorldThumbnailItem" : "WorldDetail";
