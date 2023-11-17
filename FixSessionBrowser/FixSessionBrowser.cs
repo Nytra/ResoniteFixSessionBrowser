@@ -95,7 +95,7 @@ namespace FixSessionBrowser
 				}
 				else
 				{
-					Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
+					Msg($"Forcing update for {text} {item.WorldOrSessionId.Value}");
 					forceUpdateMethod.Invoke(item, new object[] { worldDetail == null }); // Only notify the WorldListManager if the item is a WorldThumbnailItem
 					if (Config.GetValue(RESELECT) && (selectedSessionId != null || selectedWorld != null))
 					{
