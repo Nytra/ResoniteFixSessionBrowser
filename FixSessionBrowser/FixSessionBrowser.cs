@@ -4,6 +4,7 @@ using FrooxEngine;
 using System.Reflection;
 using System;
 using SkyFrost.Base;
+using System.Collections.Generic;
 
 namespace FixSessionBrowser
 {
@@ -19,7 +20,7 @@ namespace FixSessionBrowser
 		[AutoRegisterConfigKey]
 		private static ModConfigurationKey<bool> MOD_ENABLED = new ModConfigurationKey<bool>("MOD_ENABLED", "Mod enabled:", () => true);
 		[AutoRegisterConfigKey]
-		private static ModConfigurationKey<bool> RESELECT = new ModConfigurationKey<bool>("RESELECT", "Reselect the session/world in WorldDetail after it updates:", () => true, internalAccessOnly: true);
+		private static ModConfigurationKey<bool> RESELECT = new ModConfigurationKey<bool>("RESELECT", "Reselect the session/world in the detail view after it updates:", () => true);
 		[AutoRegisterConfigKey]
 		private static ModConfigurationKey<bool> EXTRA_DEBUG = new ModConfigurationKey<bool>("EXTRA_DEBUG", "Extra debug logging:", () => false, internalAccessOnly: true);
 
@@ -32,6 +33,7 @@ namespace FixSessionBrowser
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
 		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
+
 		private static FieldInfo selectedItemField = AccessTools.Field(typeof(WorldDetail), "_selectedItem");
 		private static Type sessionSelectionItemType = AccessTools.TypeByName("FrooxEngine.WorldDetail+SessionSelectionItem");
 		private static FieldInfo sessionField = AccessTools.Field(sessionSelectionItemType, "session");
@@ -39,6 +41,8 @@ namespace FixSessionBrowser
 		private static FieldInfo sessionSelectionListField = AccessTools.Field(typeof(WorldDetail), "_sessionSelectionList");
 		private static MethodInfo updateSelectedMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSelected");
 		private static MethodInfo updateSessionItemsMethod = AccessTools.Method(typeof(WorldDetail), "UpdateSessionItems");
+
+		private static HashSet<WorldItem> worldItemSet = new HashSet<WorldItem>();
 
 		private static void ExtraDebug(string msg)
 		{
@@ -57,11 +61,20 @@ namespace FixSessionBrowser
 		private static World GetWorldFromSessionSelectionItem(object obj)
 		{
 			return (World)worldField.GetValue(obj);
-
 		}
 
 		private static void ScheduleForceUpdate(WorldItem item, object selectedItem = null)
 		{
+			// check if this WorldItem is already being updated
+			if (worldItemSet.Contains(item))
+			{
+				ExtraDebug($"WorldItem already in worldItemSet: {item.WorldOrSessionId.Value}");
+				return;
+			}
+
+			worldItemSet.Add(item);
+			ExtraDebug($"WorldItem added to worldItemSet. New size of worldItemSet: {worldItemSet.Count}");
+
 			WorldDetail worldDetail = item as WorldDetail;
 			string text = worldDetail == null ? "WorldThumbnailItem" : "WorldDetail";
 			string selectedSessionId = null;
@@ -80,7 +93,6 @@ namespace FixSessionBrowser
 				if (item == null)
 				{
 					ExtraDebug("instance became null!");
-					return;
 				}
 				else
 				{
@@ -131,6 +143,13 @@ namespace FixSessionBrowser
 						}
 					}
 				}
+				if (item != null)
+				{
+					//ExtraDebug($"Removing WorldItem from worldItemSet: {item?.WorldOrSessionId.Value}");
+					worldItemSet.Remove(item);
+					ExtraDebug($"WorldItem removed from worldItemSet. New size of worldItemSet: {worldItemSet.Count}. Item: {item.WorldOrSessionId.Value}");
+				}
+				worldItemSet.TrimExcess();
 			});
 		}
 
