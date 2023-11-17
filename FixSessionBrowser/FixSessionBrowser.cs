@@ -12,7 +12,7 @@ namespace FixSessionBrowser
 	{
 		public override string Name => "FixSessionBrowser";
 		public override string Author => "Nytra";
-		public override string Version => "1.0.0";
+		public override string Version => "1.0.0-preview4";
 		public override string Link => "https://github.com/Nytra/ResoniteFixSessionBrowser";
 
 		public static ModConfiguration Config;
@@ -33,7 +33,6 @@ namespace FixSessionBrowser
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
 		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
-
 		private static FieldInfo selectedItemField = AccessTools.Field(typeof(WorldDetail), "_selectedItem");
 		private static Type sessionSelectionItemType = AccessTools.TypeByName("FrooxEngine.WorldDetail+SessionSelectionItem");
 		private static FieldInfo sessionField = AccessTools.Field(sessionSelectionItemType, "session");
