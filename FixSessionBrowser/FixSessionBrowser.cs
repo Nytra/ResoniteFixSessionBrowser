@@ -100,7 +100,7 @@ namespace FixSessionBrowser
 					forceUpdateMethod.Invoke(item, new object[] { worldDetail == null }); // Only notify the WorldListManager if the item is a WorldThumbnailItem
 					if (Config.GetValue(RESELECT) && (selectedSessionId != null || selectedWorld != null))
 					{
-						// do scary reflection to reselect the session after the WorldDetail updates
+						// do scary reflection to reselect the session/world after the WorldDetail updates
 						// this is just a quality of life improvement
 						var sessionSelectionList = (System.Collections.IList)sessionSelectionListField.GetValue(worldDetail);
 						if (sessionSelectionList == null) return;
