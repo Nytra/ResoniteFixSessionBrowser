@@ -12,7 +12,7 @@ namespace FixSessionBrowser
 	{
 		public override string Name => "FixSessionBrowser";
 		public override string Author => "Nytra";
-		public override string Version => "1.0.0-preview6";
+		public override string Version => "1.0.0";
 		public override string Link => "https://github.com/Nytra/ResoniteFixSessionBrowser";
 
 		public static ModConfiguration Config;
@@ -32,7 +32,6 @@ namespace FixSessionBrowser
 		}
 
 		private static MethodInfo forceUpdateMethod = AccessTools.Method(typeof(WorldItem), "ForceUpdate");
-		private static FieldInfo counterRootField = AccessTools.Field(typeof(WorldThumbnailItem), "_counterRoot");
 		private static FieldInfo selectedItemField = AccessTools.Field(typeof(WorldDetail), "_selectedItem");
 		private static Type sessionSelectionItemType = AccessTools.TypeByName("FrooxEngine.WorldDetail+SessionSelectionItem");
 		private static FieldInfo sessionField = AccessTools.Field(sessionSelectionItemType, "session");
@@ -95,7 +94,7 @@ namespace FixSessionBrowser
 				}
 				else
 				{
-					Msg($"Forcing update for {text} {item.WorldOrSessionId.Value}");
+					Debug($"Forcing update for {text} {item.WorldOrSessionId.Value}");
 					forceUpdateMethod.Invoke(item, new object[] { worldDetail == null }); // Only notify the WorldListManager if the item is a WorldThumbnailItem
 					if (Config.GetValue(RESELECT) && (selectedSessionId != null || selectedWorld != null))
 					{
@@ -144,7 +143,6 @@ namespace FixSessionBrowser
 				}
 				if (item != null)
 				{
-					//ExtraDebug($"Removing WorldItem from worldItemSet: {item?.WorldOrSessionId.Value}");
 					worldItemSet.Remove(item);
 					ExtraDebug($"WorldItem removed from worldItemSet. New size of worldItemSet: {worldItemSet.Count}. Item: {item.WorldOrSessionId.Value}");
 				}
@@ -184,43 +182,16 @@ namespace FixSessionBrowser
 			{
 				if (Config.GetValue(MOD_ENABLED) == true && __instance != null)
 				{
-					if (__instance is WorldThumbnailItem thumbnailItem)
+					if (__instance is WorldThumbnailItem)
 					{
-						// If this is a WorldThumbnailItem, only force update if it is showing a world and not a session
+						// If this is a WorldThumbnailItem, force update to stop it from showing just the world when there are active sessions
 						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/164
-
-						// run this at the end of the current update
-						__instance.RunSynchronously(() => 
-						{
-							if (thumbnailItem != null)
-							{
-								// Theoretically: if the counterRoot target slot is deactivated, it means it is showing a world and not a session
-
-								// this check might need to be improved somehow, because it seems to always force an update here even if
-								// the item is not a world. this makes it inefficient.
-								var counterRoot = (SyncRef<FrooxEngine.UIX.RectTransform>)counterRootField.GetValue(thumbnailItem);
-								if (counterRoot != null && counterRoot.Target != null)
-								{
-									if (counterRoot.Target.Slot?.ActiveSelf == false)
-									{
-										ExtraDebug("OnWorldIdSessionsChanged - WorldThumbnailItem");
-										ScheduleForceUpdate(__instance);
-									}
-									else
-									{
-										ExtraDebug("Counter is active!");
-									}
-								}
-								else
-								{
-									ExtraDebug("Counter is null!");
-								}
-							}
-						});
+						ExtraDebug("OnWorldIdSessionsChanged - WorldThumbnailItem");
+						ScheduleForceUpdate(__instance);
 					}
 					else if (__instance is WorldDetail worldDetail)
 					{
-						// If this is a WorldDetail, always force update
+						// If this is a WorldDetail, force update
 						// this prevents the session from disappearing while the detail panel is open
 						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/643
 						ExtraDebug("OnWorldIdSessionsChanged - WorldDetail");
