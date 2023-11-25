@@ -12,7 +12,7 @@ namespace FixSessionBrowser
 	{
 		public override string Name => "FixSessionBrowser";
 		public override string Author => "Nytra";
-		public override string Version => "1.0.0";
+		public override string Version => "1.1.0";
 		public override string Link => "https://github.com/Nytra/ResoniteFixSessionBrowser";
 
 		public static ModConfiguration Config;
