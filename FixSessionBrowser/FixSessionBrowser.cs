@@ -196,7 +196,7 @@ namespace FixSessionBrowser
 						// https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/643
 						ExtraDebug("OnWorldIdSessionsChanged - WorldDetail");
 						var selectedItem = selectedItemField.GetValue(worldDetail);
-						ScheduleForceUpdate(__instance, selectedItem is FrooxEngine.Record ? null : selectedItem);
+						ScheduleForceUpdate(__instance, selectedItem is FrooxEngine.Store.Record ? null : selectedItem);
 					}
 				}
 			}
