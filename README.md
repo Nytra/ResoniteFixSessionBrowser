@@ -1,6 +1,6 @@
 # FixSessionBrowser
 
-A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that fixds the session browser. This is no longer useful as of Beta 2024.1.30.731.
+A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that fixed the session browser. This is no longer useful as of Beta 2024.1.30.731.
 
 It was a workaround for the following issues: 
 
